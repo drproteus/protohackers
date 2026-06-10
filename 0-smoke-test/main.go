@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"io"
 	"log"
 	"net"
 )
@@ -22,16 +23,31 @@ func main() {
 	}
 }
 
-func handleConnection(conn net.Conn) {
-	defer conn.Close()
-	reader := bufio.NewReader(conn)
-	message, err := reader.ReadString('\n')
-	if err != nil {
-		log.Printf("Read error: %v", err)
-		return
-	}
-	_, err = conn.Write([]byte(message))
+func writeResponse(conn net.Conn, message string) error {
+	_, err := conn.Write([]byte(message))
 	if err != nil {
 		log.Printf("Server response error: %v", err)
+		return err
+	}
+	return nil
+}
+
+func handleConnection(conn net.Conn) {
+	defer conn.Close()
+	data := ""
+	reader := bufio.NewReader(conn)
+	for {
+		message, err := reader.ReadString('\n')
+		if err == io.EOF {
+			log.Println("Connection terminated by EOF")
+			writeResponse(conn, data)
+			return
+		}
+		if err != nil {
+			log.Printf("Read error: %v", err)
+			continue
+		}
+		data += message
+		writeResponse(conn, message)
 	}
 }
