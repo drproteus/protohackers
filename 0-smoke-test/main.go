@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"log"
 	"net"
-	"strings"
 )
 
 func main() {
@@ -31,8 +30,7 @@ func handleConnection(conn net.Conn) {
 		log.Printf("Read error: %v", err)
 		return
 	}
-	echo := strings.TrimSpace(message)
-	_, err = conn.Write([]byte(echo))
+	_, err = conn.Write([]byte(message))
 	if err != nil {
 		log.Printf("Server response error: %v", err)
 	}
