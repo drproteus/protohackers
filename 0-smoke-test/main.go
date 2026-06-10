@@ -2,7 +2,6 @@ package main
 
 import (
 	"bufio"
-	"io"
 	"log"
 	"net"
 )
@@ -38,14 +37,11 @@ func handleConnection(conn net.Conn) {
 	reader := bufio.NewReader(conn)
 	for {
 		message, err := reader.ReadBytes('\n')
-		if err == io.EOF {
-			log.Println("Connection terminated by EOF")
-			return
+		if message != nil {
+			writeResponse(conn, message)
 		}
 		if err != nil {
-			log.Printf("Read error: %v", err)
 			return
 		}
-		writeResponse(conn, message)
 	}
 }
