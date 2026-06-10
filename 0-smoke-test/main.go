@@ -25,6 +25,7 @@ func main() {
 
 func writeResponse(conn net.Conn, message []byte) error {
 	_, err := conn.Write(message)
+	log.Printf("[RECEIVED] %s", message)
 	if err != nil {
 		log.Printf("Server response error: %v", err)
 		return err
