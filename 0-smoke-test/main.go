@@ -23,8 +23,8 @@ func main() {
 	}
 }
 
-func writeResponse(conn net.Conn, message string) error {
-	_, err := conn.Write([]byte(message))
+func writeResponse(conn net.Conn, message []byte) error {
+	_, err := conn.Write(message)
 	if err != nil {
 		log.Printf("Server response error: %v", err)
 		return err
@@ -34,20 +34,19 @@ func writeResponse(conn net.Conn, message string) error {
 
 func handleConnection(conn net.Conn) {
 	defer conn.Close()
-	data := ""
+	var data []byte
 	reader := bufio.NewReader(conn)
 	for {
-		message, err := reader.ReadString('\n')
+		message, err := reader.ReadBytes('\n')
 		if err == io.EOF {
 			log.Println("Connection terminated by EOF")
-			writeResponse(conn, data)
 			return
 		}
 		if err != nil {
 			log.Printf("Read error: %v", err)
 			continue
 		}
-		data += message
+		data = append(data, message...)
 		writeResponse(conn, message)
 	}
 }
