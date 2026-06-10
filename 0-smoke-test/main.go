@@ -35,7 +35,6 @@ func writeResponse(conn net.Conn, message []byte) error {
 
 func handleConnection(conn net.Conn) {
 	defer conn.Close()
-	var data []byte
 	reader := bufio.NewReader(conn)
 	for {
 		message, err := reader.ReadBytes('\n')
@@ -45,9 +44,8 @@ func handleConnection(conn net.Conn) {
 		}
 		if err != nil {
 			log.Printf("Read error: %v", err)
-			continue
+			return
 		}
-		data = append(data, message...)
 		writeResponse(conn, message)
 	}
 }
