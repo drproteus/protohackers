@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"encoding/json"
 	"log"
+	"math"
 	"math/big"
 	"net"
 	"strings"
@@ -12,8 +13,8 @@ import (
 )
 
 type testRequest struct {
-	Method string                 `json:"method"`
-	Number nullable.Nullable[int] `json:"number"`
+	Method string                     `json:"method"`
+	Number nullable.Nullable[float64] `json:"number"`
 }
 
 type testResponse struct {
@@ -67,6 +68,10 @@ func handleConnection(conn net.Conn) {
 			return
 		}
 		num, _ := request.Number.Get()
+		if math.Trunc(num) != num {
+			errorOut(*writer)
+			return
+		}
 		prime := big.NewInt(int64(num)).ProbablyPrime(0)
 		response, err := json.Marshal(testResponse{Method: "isPrime", Prime: prime})
 		log.Printf("Result: '%s'", response)
