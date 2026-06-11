@@ -6,12 +6,13 @@ import (
 	"log"
 	"math/big"
 	"net"
+	"strconv"
 	"strings"
 )
 
 type testRequest struct {
 	Method string `json:"method"`
-	Number int    `json:"number"`
+	Number string `json:"number"`
 }
 
 type testResponse struct {
@@ -67,7 +68,15 @@ func handleConnection(conn net.Conn) {
 			writer.Flush()
 			return
 		}
-		prime := big.NewInt(int64(request.Number)).ProbablyPrime(0)
+		num, err := strconv.ParseInt(request.Number, 10, 32)
+		if err != nil {
+			log.Printf("Invalid or missing number: %s", request.Number)
+			writer.WriteString(`{"error": "Malformed request"}`)
+			writer.WriteString("\n")
+			writer.Flush()
+			return
+		}
+		prime := big.NewInt(int64(num)).ProbablyPrime(0)
 		response, err := json.Marshal(testResponse{Method: "isPrime", Prime: prime})
 		log.Printf("Result: '%s'", response)
 		writer.WriteString(string(response))
