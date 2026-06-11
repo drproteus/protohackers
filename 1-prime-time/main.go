@@ -6,13 +6,14 @@ import (
 	"log"
 	"math/big"
 	"net"
-	"strconv"
 	"strings"
+
+	"github.com/oapi-codegen/nullable"
 )
 
 type testRequest struct {
-	Method string `json:"method"`
-	Number string `json:"number"`
+	Method string                 `json:"method"`
+	Number nullable.Nullable[int] `json:"number"`
 }
 
 type testResponse struct {
@@ -36,6 +37,16 @@ func main() {
 	}
 }
 
+func writeOut(writer bufio.Writer, message string) {
+	writer.WriteString(message)
+	writer.WriteString("\n")
+	writer.Flush()
+}
+
+func errorOut(writer bufio.Writer) {
+	writeOut(writer, `{"error": "Malformed request"}`)
+}
+
 func handleConnection(conn net.Conn) {
 	defer conn.Close()
 	reader := bufio.NewReader(conn)
@@ -46,41 +57,19 @@ func handleConnection(conn net.Conn) {
 			log.Printf("Received '%s'", strings.TrimSpace(string(message)))
 		}
 		if err != nil {
-			log.Printf("Failed to read request: %v", err)
-			writer.WriteString(`{"error": "Malformed request"}`)
-			writer.WriteString("\n")
-			writer.Flush()
+			errorOut(*writer)
 			return
 		}
 		request := testRequest{}
 		err = json.Unmarshal(message, &request)
-		if err != nil {
-			log.Printf("Malformed request: %v", err)
-			writer.WriteString(`{"error": "Malformed request"}`)
-			writer.WriteString("\n")
-			writer.Flush()
+		if err != nil || request.Method != "isPrime" || !request.Number.IsSpecified() {
+			errorOut(*writer)
 			return
 		}
-		if request.Method != "isPrime" {
-			log.Printf("Invalid method: %s", request.Method)
-			writer.WriteString(`{"error": "Malformed request"}`)
-			writer.WriteString("\n")
-			writer.Flush()
-			return
-		}
-		num, err := strconv.ParseInt(request.Number, 10, 32)
-		if err != nil {
-			log.Printf("Invalid or missing number: %s", request.Number)
-			writer.WriteString(`{"error": "Malformed request"}`)
-			writer.WriteString("\n")
-			writer.Flush()
-			return
-		}
+		num, _ := request.Number.Get()
 		prime := big.NewInt(int64(num)).ProbablyPrime(0)
 		response, err := json.Marshal(testResponse{Method: "isPrime", Prime: prime})
 		log.Printf("Result: '%s'", response)
-		writer.WriteString(string(response))
-		writer.WriteString("\n")
-		writer.Flush()
+		writeOut(*writer, string(response))
 	}
 }
