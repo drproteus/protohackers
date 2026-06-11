@@ -9,6 +9,7 @@ import (
 	"net"
 	"strings"
 
+	// For nullable `number` field in input
 	"github.com/oapi-codegen/nullable"
 )
 
@@ -40,6 +41,7 @@ func main() {
 
 func writeOut(writer bufio.Writer, message string) {
 	writer.WriteString(message)
+	// Write newline and flush to ensure data is written back to client
 	writer.WriteString("\n")
 	writer.Flush()
 }
@@ -64,12 +66,14 @@ func handleConnection(conn net.Conn) {
 		request := testRequest{}
 		err = json.Unmarshal(message, &request)
 		if err != nil || request.Method != "isPrime" || !request.Number.IsSpecified() {
+			// Invalid JSON, invalid request method, or missing number value.
 			errorOut(*writer)
 			return
 		}
 		num, _ := request.Number.Get()
 		var prime bool
 		if math.Trunc(num) != num {
+			// Non-integers are automatically non-prime
 			prime = false
 		} else {
 			prime = big.NewInt(int64(num)).ProbablyPrime(0)

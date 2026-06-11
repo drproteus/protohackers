@@ -33,5 +33,45 @@
 
 # Proof
 ```
-# TODO
+[Thu Jun 11 01:42:01 2026 UTC] [0simple.test] NOTE:check starts
+[Thu Jun 11 01:42:01 2026 UTC] [0simple.test] NOTE:connected to 72.21.17.106 port 1337
+[Thu Jun 11 01:42:03 2026 UTC] [0simple.test] NOTE:handled all 25 requests correctly
+[Thu Jun 11 01:42:03 2026 UTC] [0simple.test] PASS
+[Thu Jun 11 01:42:04 2026 UTC] [1multiclient.test] NOTE:check starts
+[Thu Jun 11 01:42:04 2026 UTC] [1multiclient.test] NOTE:connected to 72.21.17.106 port 1337
+[Thu Jun 11 01:42:04 2026 UTC] [1multiclient.test] NOTE:connected to 72.21.17.106 port 1337
+[Thu Jun 11 01:42:04 2026 UTC] [1multiclient.test] NOTE:connected to 72.21.17.106 port 1337
+[Thu Jun 11 01:42:04 2026 UTC] [1multiclient.test] NOTE:connected to 72.21.17.106 port 1337
+[Thu Jun 11 01:42:04 2026 UTC] [1multiclient.test] NOTE:connected to 72.21.17.106 port 1337
+[Thu Jun 11 01:42:05 2026 UTC] [1multiclient.test] NOTE:handled all 4000 requests correctly
+[Thu Jun 11 01:42:05 2026 UTC] [1multiclient.test] PASS
+[Thu Jun 11 01:42:07 2026 UTC] [2malformedrequests.test] NOTE:check starts
+[Thu Jun 11 01:42:07 2026 UTC] [2malformedrequests.test] NOTE:connected to 72.21.17.106 port 1337
+[Thu Jun 11 01:42:07 2026 UTC] [2malformedrequests.test] NOTE:connected to 72.21.17.106 port 1337
+[Thu Jun 11 01:42:07 2026 UTC] [2malformedrequests.test] NOTE:connected to 72.21.17.106 port 1337
+[Thu Jun 11 01:42:07 2026 UTC] [2malformedrequests.test] NOTE:connected to 72.21.17.106 port 1337
+[Thu Jun 11 01:42:07 2026 UTC] [2malformedrequests.test] NOTE:connected to 72.21.17.106 port 1337
+[Thu Jun 11 01:42:07 2026 UTC] [2malformedrequests.test] NOTE:connected to 72.21.17.106 port 1337
+[Thu Jun 11 01:42:08 2026 UTC] [2malformedrequests.test] NOTE:connected to 72.21.17.106 port 1337
+[Thu Jun 11 01:42:08 2026 UTC] [2malformedrequests.test] NOTE:connected to 72.21.17.106 port 1337
+[Thu Jun 11 01:42:08 2026 UTC] [2malformedrequests.test] NOTE:connected to 72.21.17.106 port 1337
+[Thu Jun 11 01:42:08 2026 UTC] [2malformedrequests.test] NOTE:connected to 72.21.17.106 port 1337
+[Thu Jun 11 01:42:08 2026 UTC] [2malformedrequests.test] NOTE:connected to 72.21.17.106 port 1337
+[Thu Jun 11 01:42:09 2026 UTC] [2malformedrequests.test] NOTE:connected to 72.21.17.106 port 1337
+[Thu Jun 11 01:42:09 2026 UTC] [2malformedrequests.test] NOTE:connected to 72.21.17.106 port 1337
+[Thu Jun 11 01:42:09 2026 UTC] [2malformedrequests.test] NOTE:connected to 72.21.17.106 port 1337
+[Thu Jun 11 01:42:09 2026 UTC] [2malformedrequests.test] NOTE:connected to 72.21.17.106 port 1337
+[Thu Jun 11 01:42:09 2026 UTC] [2malformedrequests.test] NOTE:connected to 72.21.17.106 port 1337
+[Thu Jun 11 01:42:10 2026 UTC] [2malformedrequests.test] NOTE:connected to 72.21.17.106 port 1337
+[Thu Jun 11 01:42:10 2026 UTC] [2malformedrequests.test] PASS
+[Thu Jun 11 01:42:11 2026 UTC] [3wellformedrequests.test] NOTE:check starts
+[Thu Jun 11 01:42:11 2026 UTC] [3wellformedrequests.test] NOTE:connected to 72.21.17.106 port 1337
+[Thu Jun 11 01:42:11 2026 UTC] [3wellformedrequests.test] NOTE:connected to 72.21.17.106 port 1337
+[Thu Jun 11 01:42:11 2026 UTC] [3wellformedrequests.test] NOTE:connected to 72.21.17.106 port 1337
+[Thu Jun 11 01:42:12 2026 UTC] [3wellformedrequests.test] NOTE:connected to 72.21.17.106 port 1337
+[Thu Jun 11 01:42:12 2026 UTC] [3wellformedrequests.test] NOTE:connected to 72.21.17.106 port 1337
+[Thu Jun 11 01:42:12 2026 UTC] [3wellformedrequests.test] NOTE:connected to 72.21.17.106 port 1337
+[Thu Jun 11 01:42:12 2026 UTC] [3wellformedrequests.test] NOTE:connected to 72.21.17.106 port 1337
+[Thu Jun 11 01:42:13 2026 UTC] [3wellformedrequests.test] NOTE:connected to 72.21.17.106 port 1337
+[Thu Jun 11 01:42:13 2026 UTC] [3wellformedrequests.test] PASS
 ```
