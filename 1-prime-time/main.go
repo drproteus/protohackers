@@ -68,11 +68,12 @@ func handleConnection(conn net.Conn) {
 			return
 		}
 		num, _ := request.Number.Get()
+		var prime bool
 		if math.Trunc(num) != num {
-			errorOut(*writer)
-			return
+			prime = false
+		} else {
+			prime = big.NewInt(int64(num)).ProbablyPrime(0)
 		}
-		prime := big.NewInt(int64(num)).ProbablyPrime(0)
 		response, err := json.Marshal(testResponse{Method: "isPrime", Prime: prime})
 		log.Printf("Result: '%s'", response)
 		writeOut(*writer, string(response))
