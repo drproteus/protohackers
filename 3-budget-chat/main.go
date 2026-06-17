@@ -7,6 +7,7 @@ import (
 	"net"
 	"strings"
 	"time"
+	"unicode"
 )
 
 const WRITE_LOOP_SLEEP = 1 // seconds
@@ -42,6 +43,7 @@ func main() {
 	go writeLoop(&state)
 	for {
 		conn, err := listener.Accept()
+		// conn.SetDeadline(time.Now().Add(5 * time.Second))
 		if err != nil {
 			log.Println("Error accepting connection: ", err)
 			continue
@@ -57,7 +59,6 @@ func main() {
 }
 
 func handleConnection(conn net.Conn, connId int, state *ChatState) {
-	defer conn.Close()
 	rw := state.rwMap[connId]
 	rw.WriteString("Welcome to budgetchat! What shall I call you?\n")
 	rw.Flush()
@@ -69,9 +70,18 @@ func handleConnection(conn net.Conn, connId int, state *ChatState) {
 	name = strings.TrimSpace(name)
 	if len(name) < 1 {
 		msg := "Name too short!\n"
-		log.Println(msg)
+		log.Print(msg)
 		rw.WriteString(msg)
 		rw.Flush()
+		conn.Close()
+		return
+	}
+	if containsNonAlphanumeric(name) {
+		msg := "Illegal name!\n"
+		log.Print(msg)
+		rw.WriteString(msg)
+		rw.Flush()
+		conn.Close()
 		return
 	}
 	log.Printf("[USER JOINED] [CONN ID: %d] [NAME: %s]", connId, name)
@@ -86,7 +96,11 @@ func handleConnection(conn net.Conn, connId int, state *ChatState) {
 	// }
 	// for {
 	// }
-	go readLoop(*state, state.connId)
+	users := getConnectedUsers(state, connId)
+	usersString := strings.Join(users, ", ")
+	rw.WriteString(fmt.Sprintf("* The room contains: %s\n", usersString))
+	rw.Flush()
+	go readLoop(state, connId)
 }
 
 func writeLoop(state *ChatState) {
@@ -105,16 +119,65 @@ func writeLoop(state *ChatState) {
 			if state.nameMap[i] == "" || msg.connId == i {
 				continue
 			}
-			state.rwMap[i].WriteString(fmt.Sprintf("%s\n", msg.message))
-			state.rwMap[i].Flush()
+			message := msg.message
+			if msg.name != "_SYSTEM" {
+				message = fmt.Sprintf("[%s] %s", msg.name, msg.message)
+			}
+			_, err := state.rwMap[i].WriteString(fmt.Sprintf("%s\n", message))
+			if err != nil {
+				// connection is probably closed (TODO)
+				continue
+			}
+			err = state.rwMap[i].Flush()
+			if err != nil {
+				log.Fatal(err)
+			}
 			log.Printf("Wrote to conn ID %d, %s\n", i, state.nameMap[i])
 		}
 		time.Sleep(WRITE_LOOP_SLEEP * time.Second)
 	}
 }
 
-func readLoop(state ChatState, connId int) {
+func cleanUpConn(state *ChatState, connId int) {
+	state.rwMap[connId].Flush()
+	state.connMap[connId].Close()
+	msg := ChatMessage{connId, "_SYSTEM", fmt.Sprintf("* %s has left the room", state.nameMap[connId])}
+	state.msgQueue = append(state.msgQueue, msg)
+	// just clear the name in the map to indicate disconnect (TODO, improve)
+	state.nameMap[connId] = ""
+}
+
+func readLoop(state *ChatState, connId int) {
+	defer cleanUpConn(state, connId)
+	rw := state.rwMap[connId]
 	for {
+		message, err := rw.ReadString('\n')
+		if err != nil {
+			log.Println(err)
+			return
+		}
+		message = strings.TrimSpace(message)
+		state.msgQueue = append(state.msgQueue, ChatMessage{connId, state.nameMap[connId], message})
 		time.Sleep(READ_LOOP_SLEEP * time.Second)
 	}
+}
+
+func getConnectedUsers(state *ChatState, connId int) []string {
+	users := make([]string, 0)
+	for i := 0; i < state.connId; i++ {
+		if i == connId || state.nameMap[connId] == "" {
+			continue
+		}
+		users = append(users, state.nameMap[i])
+	}
+	return users
+}
+
+func containsNonAlphanumeric(s string) bool {
+	for _, r := range s {
+		if !unicode.IsLetter(r) && !unicode.IsDigit(r) {
+			return true // Found a non-alphanumeric character
+		}
+	}
+	return false
 }
