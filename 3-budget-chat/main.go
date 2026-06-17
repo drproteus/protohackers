@@ -6,12 +6,8 @@ import (
 	"log"
 	"net"
 	"strings"
-	"time"
 	"unicode"
 )
-
-const WRITE_LOOP_SLEEP = 1 // seconds
-const READ_LOOP_SLEEP = 1  // seconds
 
 type ChatMessage struct {
 	connId  int
@@ -134,7 +130,6 @@ func writeLoop(state *ChatState) {
 			}
 			log.Printf("Wrote to conn ID %d, %s\n", i, state.nameMap[i])
 		}
-		time.Sleep(WRITE_LOOP_SLEEP * time.Second)
 	}
 }
 
@@ -158,7 +153,6 @@ func readLoop(state *ChatState, connId int) {
 		}
 		message = strings.TrimSpace(message)
 		state.msgQueue = append(state.msgQueue, ChatMessage{connId, state.nameMap[connId], message})
-		time.Sleep(READ_LOOP_SLEEP * time.Second)
 	}
 }
 
