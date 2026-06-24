@@ -11,7 +11,7 @@ import (
 var lock = sync.RWMutex{}
 
 func main() {
-	pc, err := net.ListenPacket("udp", ":1337")
+	pc, err := net.ListenPacket("udp", ":13337")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -51,7 +51,8 @@ func read(pc net.PacketConn, addr net.Addr, key string, store map[string]string)
 	lock.RLock()
 	defer lock.RUnlock()
 	value := store[key]
-	_, err := pc.WriteTo([]byte(fmt.Sprintf("%s=%s\n", key, value)), addr)
+	log.Printf("Value of %s is %s\n", key, value)
+	_, err := pc.WriteTo([]byte(fmt.Sprintf("%s=%s", key, value)), addr)
 	if err != nil {
 		log.Println("write:", err)
 	}
