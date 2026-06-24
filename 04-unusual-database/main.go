@@ -8,7 +8,7 @@ import (
 	"sync"
 )
 
-var lock = sync.Mutex{}
+var lock = sync.RWMutex{}
 
 func main() {
 	pc, err := net.ListenPacket("udp", ":13337")
@@ -31,8 +31,6 @@ func main() {
 }
 
 func respond(pc net.PacketConn, addr net.Addr, payload []byte, store map[string]string) {
-	// msg := strings.TrimSpace(string(payload))
-	// msg := strings.TrimSuffix(string(payload), "\n")
 	msg := string(payload)
 	log.Println("msg:", msg)
 	sepIndex := strings.IndexRune(msg, '=')
@@ -43,15 +41,15 @@ func respond(pc net.PacketConn, addr net.Addr, payload []byte, store map[string]
 		key := msg[:sepIndex]
 		if key != "version" {
 			value := msg[sepIndex+1:]
-			write(pc, addr, key, value, store)
+			write(key, value, store)
 			log.Printf("Value of %s is now %s\n", key, value)
 		}
 	}
 }
 
 func read(pc net.PacketConn, addr net.Addr, key string, store map[string]string) {
-	lock.Lock()
-	defer lock.Unlock()
+	lock.RLock()
+	defer lock.RUnlock()
 	value := store[key]
 	log.Printf("Value of %s is %s\n", key, value)
 	_, err := pc.WriteTo([]byte(fmt.Sprintf("%s=%s", key, value)), addr)
@@ -60,7 +58,7 @@ func read(pc net.PacketConn, addr net.Addr, key string, store map[string]string)
 	}
 }
 
-func write(pc net.PacketConn, addr net.Addr, key string, value string, store map[string]string) {
+func write(key string, value string, store map[string]string) {
 	lock.Lock()
 	defer lock.Unlock()
 	store[key] = value
