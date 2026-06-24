@@ -1,4 +1,4 @@
-# Problem Statement
+# 3. Budget Chat
 
 https://protohackers.com/problem/3
 

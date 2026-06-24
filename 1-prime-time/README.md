@@ -1,4 +1,4 @@
-# Problem Statement
+# 1. Prime Time
 > To keep costs down, a hot new government department is contracting out its mission-critical primality testing to the lowest bidder. (That's you).
 >
 > Officials have devised a JSON-based request-response protocol. Each request is a single line containing a JSON object, terminated by a newline character ('\n', or ASCII 10). Each request begets a response, which is also a single line containing a JSON object, terminated by a newline character.
