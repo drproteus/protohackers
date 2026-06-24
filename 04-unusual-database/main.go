@@ -31,7 +31,9 @@ func main() {
 }
 
 func respond(pc net.PacketConn, addr net.Addr, payload []byte, store map[string]string) {
-	msg := strings.TrimSpace(string(payload))
+	// msg := strings.TrimSpace(string(payload))
+	// msg := strings.TrimSuffix(string(payload), "\n")
+	msg := string(payload)
 	log.Println("msg:", msg)
 	sepIndex := strings.IndexRune(msg, '=')
 	log.Println("sepIndex:", sepIndex)
