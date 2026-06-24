@@ -8,7 +8,7 @@ import (
 	"sync"
 )
 
-var lock = sync.RWMutex{}
+var lock = sync.Mutex{}
 
 func main() {
 	pc, err := net.ListenPacket("udp", ":13337")
@@ -48,8 +48,8 @@ func respond(pc net.PacketConn, addr net.Addr, payload []byte, store map[string]
 }
 
 func read(pc net.PacketConn, addr net.Addr, key string, store map[string]string) {
-	lock.RLock()
-	defer lock.RUnlock()
+	lock.Lock()
+	defer lock.Unlock()
 	value := store[key]
 	log.Printf("Value of %s is %s\n", key, value)
 	_, err := pc.WriteTo([]byte(fmt.Sprintf("%s=%s", key, value)), addr)
