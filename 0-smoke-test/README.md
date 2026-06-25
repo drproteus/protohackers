@@ -16,21 +16,21 @@
 # Proof
 ```log
 [Wed Jun 10 22:48:48 2026 UTC] [main.test] NOTE:check starts
-[Wed Jun 10 22:48:48 2026 UTC] [main.test] NOTE:connected to 72.21.17.106 port 1337
+[Wed Jun 10 22:48:48 2026 UTC] [main.test] NOTE:connected to 186.98.167.103 port 1337
 [Wed Jun 10 22:48:48 2026 UTC] [main.test] NOTE:passed content.0
-[Wed Jun 10 22:48:48 2026 UTC] [main.test] NOTE:connected to 72.21.17.106 port 1337
+[Wed Jun 10 22:48:48 2026 UTC] [main.test] NOTE:connected to 186.98.167.103 port 1337
 [Wed Jun 10 22:48:48 2026 UTC] [main.test] NOTE:passed content.1
-[Wed Jun 10 22:48:48 2026 UTC] [main.test] NOTE:connected to 72.21.17.106 port 1337
+[Wed Jun 10 22:48:48 2026 UTC] [main.test] NOTE:connected to 186.98.167.103 port 1337
 [Wed Jun 10 22:48:49 2026 UTC] [main.test] NOTE:passed content.2
-[Wed Jun 10 22:48:49 2026 UTC] [main.test] NOTE:connected to 72.21.17.106 port 1337
+[Wed Jun 10 22:48:49 2026 UTC] [main.test] NOTE:connected to 186.98.167.103 port 1337
 [Wed Jun 10 22:48:49 2026 UTC] [main.test] NOTE:passed content.3
 [Wed Jun 10 22:48:49 2026 UTC] [main.test] PASS
 [Wed Jun 10 22:48:50 2026 UTC] [multiclient.test] NOTE:check starts
-[Wed Jun 10 22:48:50 2026 UTC] [multiclient.test] NOTE:connected to 72.21.17.106 port 1337
-[Wed Jun 10 22:48:50 2026 UTC] [multiclient.test] NOTE:connected to 72.21.17.106 port 1337
-[Wed Jun 10 22:48:50 2026 UTC] [multiclient.test] NOTE:connected to 72.21.17.106 port 1337
-[Wed Jun 10 22:48:50 2026 UTC] [multiclient.test] NOTE:connected to 72.21.17.106 port 1337
-[Wed Jun 10 22:48:50 2026 UTC] [multiclient.test] NOTE:connected to 72.21.17.106 port 1337
+[Wed Jun 10 22:48:50 2026 UTC] [multiclient.test] NOTE:connected to 186.98.167.103 port 1337
+[Wed Jun 10 22:48:50 2026 UTC] [multiclient.test] NOTE:connected to 186.98.167.103 port 1337
+[Wed Jun 10 22:48:50 2026 UTC] [multiclient.test] NOTE:connected to 186.98.167.103 port 1337
+[Wed Jun 10 22:48:50 2026 UTC] [multiclient.test] NOTE:connected to 186.98.167.103 port 1337
+[Wed Jun 10 22:48:50 2026 UTC] [multiclient.test] NOTE:connected to 186.98.167.103 port 1337
 [Wed Jun 10 22:48:50 2026 UTC] [multiclient.test] NOTE:passed connection 0
 [Wed Jun 10 22:48:50 2026 UTC] [multiclient.test] NOTE:passed connection 1
 [Wed Jun 10 22:48:50 2026 UTC] [multiclient.test] NOTE:passed connection 2
