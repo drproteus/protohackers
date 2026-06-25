@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"encoding/binary"
+	"io"
 	"log"
 	"net"
 )
@@ -39,60 +40,34 @@ func handleConnection(conn net.Conn) {
 	reader := bufio.NewReader(conn)
 	record := make(map[int32]int32)
 	for {
-		msgQueryType, err := reader.ReadByte()
+		msgTypeBytes := make([]byte, 1)
+		_, err := io.ReadFull(reader, msgTypeBytes)
 		if err != nil {
 			log.Printf("Error reading first byte of message: %v\n", err)
 			return
 		}
-		if int(msgQueryType) == 73 {
+		msgType := string(msgTypeBytes)
+		if msgType == "I" {
 			// The first byte is equivalent to ASCII 'I',
 			// This is an insertion.
 			timestampBytes := make([]byte, 4)
-			for i := 0; i < 4; i++ {
-				nextByte, err := reader.ReadByte()
-				if err != nil {
-					log.Printf("Error reading timestamp: %v\n", err)
-					return
-				}
-				timestampBytes = append(timestampBytes, nextByte)
-			}
+			_, err = io.ReadFull(reader, timestampBytes)
 			timestampUnsigned := binary.BigEndian.Uint32(timestampBytes)
 			timestamp := int32(timestampUnsigned)
 			priceBytes := make([]byte, 4)
-			for i := 0; i < 4; i++ {
-				nextByte, err := reader.ReadByte()
-				if err != nil {
-					log.Printf("Error reading price: %v\n", err)
-					return
-				}
-				priceBytes = append(priceBytes, nextByte)
-			}
+			_, err = io.ReadFull(reader, priceBytes)
 			priceUnsigned := binary.BigEndian.Uint32(priceBytes)
 			price := int32(priceUnsigned)
 			record[timestamp] = price
-		} else if int(msgQueryType) == 81 {
+		} else if msgType == "Q" {
 			// The first byte is equivalent to ASCII 'Q',
 			// This is a query.
 			mintimeBytes := make([]byte, 4)
-			for i := 0; i < 4; i++ {
-				nextByte, err := reader.ReadByte()
-				if err != nil {
-					log.Printf("Error reading mintime: %v\n", err)
-					return
-				}
-				mintimeBytes = append(mintimeBytes, nextByte)
-			}
+			_, err = io.ReadFull(reader, mintimeBytes)
 			mintimeUnsigned := binary.BigEndian.Uint32(mintimeBytes)
 			mintime := int32(mintimeUnsigned)
 			maxtimeBytes := make([]byte, 4)
-			for i := 0; i < 4; i++ {
-				nextByte, err := reader.ReadByte()
-				if err != nil {
-					log.Printf("Error reading mintime: %v\n", err)
-					return
-				}
-				maxtimeBytes = append(maxtimeBytes, nextByte)
-			}
+			_, err = io.ReadFull(reader, maxtimeBytes)
 			maxtimeUnsigned := binary.BigEndian.Uint32(maxtimeBytes)
 			maxtime := int32(maxtimeUnsigned)
 			if mintime > maxtime {
@@ -100,23 +75,23 @@ func handleConnection(conn net.Conn) {
 				continue
 			}
 			// Now it's time to crunch the numbers.
-			var sum int32
-			var count int32
+			var sum int64
+			var count int64
 			for timestamp, price := range record {
 				if timestamp < mintime || timestamp > maxtime {
 					continue
 				}
 				count++
-				sum += price
+				sum += int64(price)
 			}
 			if count < 1 {
 				writeResponse(conn, 0)
 				continue
 			}
-			mean := sum / count
+			mean := int32(sum / count)
 			writeResponse(conn, mean)
 		} else {
-			log.Printf("Unexpected message type, closing connection!")
+			log.Printf("Unexpected message type: %v", msgType)
 		}
 	}
 }
