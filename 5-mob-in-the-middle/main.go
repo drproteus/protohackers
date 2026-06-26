@@ -11,6 +11,11 @@ const UPSTREAM_ADDRESS = "chat.protohackers.com:16963"
 const BOGUSCOIN_ADDRESS = "7YWHMfk9JZe0LM0g1ZauHuiSxhI"
 const BOGUSCOIN_PATTERN = `\b7[a-zA-Z0-9]{25,34}\b`
 
+type ProxyMessage struct {
+	Original string
+	Modified string
+}
+
 func main() {
 	listener, err := net.Listen("tcp", ":13337")
 	if err != nil {
@@ -48,22 +53,59 @@ func handleConnection(conn net.Conn) {
 		log.Println("Connected to chat server.")
 	}
 	defer pconn.Close()
-	reader := bufio.NewReader(conn)
+	// reader := bufio.NewReader(conn)
+	// for {
+	// 	message, err := reader.ReadBytes('\n')
+	// 	if err != nil {
+	// 		log.Printf("Error reading from downstream client: %v\n", err)
+	// 		return
+	// 	}
+	// 	shakedown(&message)
+	// 	err = writeResponse(pconn, message)
+	// 	if err != nil {
+	// 		return
+	// 	}
+	// }
+	msgQueue := make([]ProxyMessage, 0)
+	go readLoop(pconn, &msgQueue)
+	go writeLoop(conn, pconn, &msgQueue)
 	for {
-		message, err := reader.ReadBytes('\n')
-		if err != nil {
-			log.Printf("Error reading from downstream client: %v\n", err)
-			return
-		}
-		shakedown(&message)
-		err = writeResponse(pconn, message)
-		if err != nil {
-			return
-		}
+		// Keep alive?
 	}
 }
 
-func shakedown(message *[]byte) {
+func readLoop(pconn net.Conn, msgQueue *[]ProxyMessage) {
+	reader := bufio.NewReader(pconn)
+	for {
+		message, _ := reader.ReadBytes('\n')
+		log.Printf("Received: %s\n", message)
+		pMsg := ProxyMessage{}
+		pMsg.Original = string(message)
+		pMsg.Modified = string(shakedown(message))
+		log.Printf("Substituted message: %s\n", message)
+		*msgQueue = append(*msgQueue, pMsg)
+	}
+}
+
+func writeLoop(conn net.Conn, pconn net.Conn, msgQueue *[]ProxyMessage) {
+	writer := bufio.NewWriter(conn)
+	pwriter := bufio.NewWriter(pconn)
+	for {
+		if len(*msgQueue) < 1 {
+			continue
+		}
+		msg := (*msgQueue)[0]
+		*msgQueue = (*msgQueue)[1:]
+		writer.WriteString(msg.Original)
+		writer.Flush()
+		pwriter.WriteString(msg.Modified)
+		pwriter.Flush()
+		log.Printf("Wrote: %s\n", msg)
+	}
+}
+
+func shakedown(message []byte) []byte {
 	re, _ := regexp.Compile(BOGUSCOIN_PATTERN)
-	re.ReplaceAll(*message, []byte(BOGUSCOIN_ADDRESS))
+	re.ReplaceAll(message, []byte(BOGUSCOIN_ADDRESS))
+	return message
 }
