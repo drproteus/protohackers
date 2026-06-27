@@ -11,11 +11,6 @@ const UPSTREAM_ADDRESS = "chat.protohackers.com:16963"
 const BOGUSCOIN_ADDRESS = "7YWHMfk9JZe0LM0g1ZauHuiSxhI"
 const BOGUSCOIN_PATTERN = `\b7[a-zA-Z0-9]{25,34}\b`
 
-type ProxyMessage struct {
-	Original string
-	Modified string
-}
-
 func main() {
 	listener, err := net.Listen("tcp", ":13337")
 	if err != nil {
@@ -23,12 +18,12 @@ func main() {
 	}
 	defer listener.Close()
 	for {
-		conn, err := listener.Accept()
+		pconn, err := listener.Accept()
 		if err != nil {
 			log.Println("Error accepting connection: ", err)
 			continue
 		}
-		go handleConnection(conn)
+		go handleConnection(pconn)
 	}
 }
 
@@ -37,75 +32,62 @@ func writeResponse(conn net.Conn, message []byte) error {
 	if err != nil {
 		log.Printf("Error writing response: %v", err)
 		return err
-	} else {
-		log.Println("Response relayed.")
 	}
 	return nil
 }
 
-func handleConnection(conn net.Conn) {
-	defer conn.Close()
-	pconn, err := net.Dial("tcp", UPSTREAM_ADDRESS)
+func handleConnection(pconn net.Conn) {
+	defer pconn.Close()
+	uconn, err := net.Dial("tcp", UPSTREAM_ADDRESS)
 	if err != nil {
 		log.Printf("Error connecting to upstream chat server: %v\n", err)
 		return
 	} else {
 		log.Println("Connected to chat server.")
 	}
-	defer pconn.Close()
-	// reader := bufio.NewReader(conn)
-	// for {
-	// 	message, err := reader.ReadBytes('\n')
-	// 	if err != nil {
-	// 		log.Printf("Error reading from downstream client: %v\n", err)
-	// 		return
-	// 	}
-	// 	shakedown(&message)
-	// 	err = writeResponse(pconn, message)
-	// 	if err != nil {
-	// 		return
-	// 	}
-	// }
-	msgQueue := make([]ProxyMessage, 0)
-	go readLoop(pconn, &msgQueue)
-	go writeLoop(conn, pconn, &msgQueue)
+	defer uconn.Close()
+
+	go readLoop(pconn, uconn)
+	go writeLoop(pconn, uconn)
+
 	for {
-		// Keep alive?
 	}
 }
 
-func readLoop(pconn net.Conn, msgQueue *[]ProxyMessage) {
+func readLoop(pconn net.Conn, uconn net.Conn) {
 	reader := bufio.NewReader(pconn)
 	for {
-		message, _ := reader.ReadBytes('\n')
-		log.Printf("Received: %s\n", message)
-		pMsg := ProxyMessage{}
-		pMsg.Original = string(message)
-		pMsg.Modified = string(shakedown(message))
-		log.Printf("Substituted message: %s\n", message)
-		*msgQueue = append(*msgQueue, pMsg)
+		message, err := reader.ReadBytes('\n')
+		if err != nil {
+			log.Printf("(p) %v\n", err)
+			return
+		}
+		log.Printf("(p) --> %s", message)
+		err = writeResponse(uconn, shakedown(message))
+		if err != nil {
+			log.Printf("(u) %v\n", err)
+		}
 	}
 }
 
-func writeLoop(conn net.Conn, pconn net.Conn, msgQueue *[]ProxyMessage) {
-	writer := bufio.NewWriter(conn)
-	pwriter := bufio.NewWriter(pconn)
+func writeLoop(pconn net.Conn, uconn net.Conn) {
+	reader := bufio.NewReader(uconn)
 	for {
-		if len(*msgQueue) < 1 {
-			continue
+		message, err := reader.ReadBytes('\n')
+		if err != nil {
+			log.Printf("(u) %v\n", err)
+			return
 		}
-		msg := (*msgQueue)[0]
-		*msgQueue = (*msgQueue)[1:]
-		writer.WriteString(msg.Original)
-		writer.Flush()
-		pwriter.WriteString(msg.Modified)
-		pwriter.Flush()
-		log.Printf("Wrote: %s\n", msg)
+		log.Printf("(u) --> %s", message)
+		err = writeResponse(pconn, shakedown(message))
+		if err != nil {
+			log.Printf("(p) %v\n", err)
+			return
+		}
 	}
 }
 
 func shakedown(message []byte) []byte {
 	re, _ := regexp.Compile(BOGUSCOIN_PATTERN)
-	re.ReplaceAll(message, []byte(BOGUSCOIN_ADDRESS))
-	return message
+	return re.ReplaceAll(message, []byte(BOGUSCOIN_ADDRESS))
 }
