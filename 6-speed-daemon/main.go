@@ -4,20 +4,30 @@ import (
 	"bufio"
 	"encoding/binary"
 	"errors"
+	"fmt"
 	"log"
 	"net"
+	"slices"
 )
 
+type Observation struct {
+	Plate     string
+	Timestamp int
+}
+
 type Camera struct {
-	ID    int
-	Road  uint16 // in [0-65535]
-	Mile  uint16 // mile marker on road
-	Limit uint16 // speed limit
+	ID                int
+	Road              uint16 // in [0-65535]
+	Mile              uint16 // mile marker on road
+	Limit             uint16 // speed limit
+	Enabled           bool   // if the camera is valid and was registered
+	HeartbeatInterval uint32 // heartbeat interval, if set
 }
 
 // Map of Camera IDs to Cameras
 type State struct {
-	Cameras map[int]Camera
+	Cameras          map[int]Camera
+	RoadObservations map[int]Observation // map of road ID to plate/timestamps on that road
 }
 
 type MessageType int
@@ -58,7 +68,7 @@ func main() {
 		log.Fatal("Error creating server: ", err)
 	}
 	defer listener.Close()
-	state := State{make(map[int]Camera)}
+	state := State{make(map[int]Camera), make(map[int]Observation)}
 	cameraId := 0
 	for {
 		conn, err := listener.Accept()
@@ -115,19 +125,38 @@ func handle(conn net.Conn, state *State, cameraId int) {
 				binary.BigEndian.Uint16(roadBytes),
 				binary.BigEndian.Uint16(mileBytes),
 				binary.BigEndian.Uint16(limitBytes),
+				true,
+				0,
 			}
 			registerCamera(c, state)
+		} else if messageType == WantHeartbeat {
+			intervalBytes := make([]byte, 4)
+			for range 4 {
+				b, _ := reader.ReadByte()
+				intervalBytes = append(intervalBytes, b)
+			}
+			interval := binary.BigEndian.Uint32(intervalBytes)
+			if !(*state).Cameras[cameraId].Enabled {
+				writeError(conn, fmt.Sprintf("Requested camera %d not enabled!", cameraId))
+				continue
+			}
+			c := (*state).Cameras[cameraId]
+			c.HeartbeatInterval = interval
+			(*state).Cameras[cameraId] = c
 		}
 	}
 }
 
-// func getMonitoredRoads(state *State) []uint16 {
-// 	roads := make([]uint16, 0)
-// 	for i := range (*state).Cameras {
-// 		roads = append(roads, uint16(i))
-// 	}
-// 	return roads
-// }
+func getMonitoredRoads(state *State) []int {
+	roads := make([]int, 0)
+	for i := range (*state).Cameras {
+		if slices.Contains(roads, i) {
+			continue
+		}
+		roads = append(roads, i)
+	}
+	return roads
+}
 
 func registerCamera(camera Camera, state *State) {
 	(*state).Cameras[int(camera.ID)] = camera
@@ -192,5 +221,20 @@ func issueTicket(
 	mBytes, _ = binary.Append(mBytes, binary.BigEndian, mile2)
 	mBytes, _ = binary.Append(mBytes, binary.BigEndian, timestamp2)
 	mBytes, _ = binary.Append(mBytes, binary.BigEndian, speed)
+	conn.Write(mBytes)
+}
+
+func iAmDispatcher(conn net.Conn, state *State) {
+	mBytes := []byte{messageTypeByte[IAmDispatcher]}
+	roads := getMonitoredRoads(state)
+	mBytes, _ = binary.Append(mBytes, binary.BigEndian, uint8(len(roads)))
+	for r := range roads {
+		mBytes, _ = binary.Append(mBytes, binary.BigEndian, uint16(r))
+	}
+	conn.Write(mBytes)
+}
+
+func sendHeartbeat(conn net.Conn) {
+	mBytes := []byte{messageTypeByte[Heartbeat]}
 	conn.Write(mBytes)
 }
