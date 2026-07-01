@@ -12,7 +12,7 @@ import (
 
 type Observation struct {
 	Plate     string
-	Timestamp int
+	Timestamp uint32
 }
 
 type Camera struct {
@@ -26,8 +26,8 @@ type Camera struct {
 
 // Map of Camera IDs to Cameras
 type State struct {
-	Cameras          map[int]Camera
-	RoadObservations map[int]Observation // map of road ID to plate/timestamps on that road
+	Cameras          map[int]Camera           // map of camera ID to camera
+	RoadObservations map[uint16][]Observation // map of road ID to plate/timestamps on that road
 }
 
 type MessageType int
@@ -68,7 +68,7 @@ func main() {
 		log.Fatal("Error creating server: ", err)
 	}
 	defer listener.Close()
-	state := State{make(map[int]Camera), make(map[int]Observation)}
+	state := State{make(map[int]Camera), make(map[uint16][]Observation)}
 	cameraId := 0
 	for {
 		conn, err := listener.Accept()
@@ -143,6 +143,28 @@ func handle(conn net.Conn, state *State, cameraId int) {
 			c := (*state).Cameras[cameraId]
 			c.HeartbeatInterval = interval
 			(*state).Cameras[cameraId] = c
+		} else if messageType == PlateMessage {
+			c := (*state).Cameras[cameraId]
+			if !c.Enabled {
+				writeError(conn, fmt.Sprintf("Observation on disabled camera %d!", cameraId))
+				continue
+			}
+			plateLengthByte, _ := reader.ReadByte()
+			plateLength := int(plateLengthByte)
+			plateBytes := make([]byte, plateLength)
+			for range plateLength {
+				b, _ := reader.ReadByte()
+				plateBytes = append(plateBytes, b)
+			}
+			timestampBytes := make([]byte, 4)
+			for range 4 {
+				b, _ := reader.ReadByte()
+				timestampBytes = append(timestampBytes, b)
+			}
+			timestamp := binary.BigEndian.Uint32(timestampBytes)
+			ro := (*state).RoadObservations[c.Road]
+			ro = append(ro, Observation{string(plateBytes), timestamp})
+			(*state).RoadObservations[c.Road] = ro
 		}
 	}
 }
