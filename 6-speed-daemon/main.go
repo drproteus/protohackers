@@ -9,13 +9,15 @@ import (
 )
 
 type Camera struct {
-	Road       uint16 // in [0-65535]
-	Location   uint16 // mile marker on road
-	SpeedLimit uint16 // speed limit
+	ID    int
+	Road  uint16 // in [0-65535]
+	Mile  uint16 // mile marker on road
+	Limit uint16 // speed limit
 }
 
+// Map of Camera IDs to Cameras
 type State struct {
-	RoadCameras map[int][]Camera
+	Cameras map[int]Camera
 }
 
 type MessageType int
@@ -51,33 +53,35 @@ var messageTypeByte = map[MessageType]byte{
 }
 
 func main() {
-	// listener, err := net.Listen("tcp", "6969")
-	// if err != nil {
-	// 	log.Fatal("Error creating server: ", err)
-	// }
-	// defer listener.Close()
-	// state := State{make(map[int][]Camera)}
-	// for {
-	// 	conn, err := listener.Accept()
-	// 	if err != nil {
-	// 		log.Printf("Error accepting connection: %v\n", err)
-	// 		continue
-	// 	}
-	// 	go handle(conn, &state)
-	// }
-	state := State{make(map[int][]Camera)}
-	c1 := Camera{1, 20, 60}
-	c2 := Camera{1, 30, 50}
-	c3 := Camera{2, 10, 35}
-	c4 := Camera{1, 100, 70}
-	registerCamera(c1, &state)
-	registerCamera(c2, &state)
-	registerCamera(c3, &state)
-	registerCamera(c4, &state)
-	log.Println(getMonitoredRoads(&state))
+	listener, err := net.Listen("tcp", "6969")
+	if err != nil {
+		log.Fatal("Error creating server: ", err)
+	}
+	defer listener.Close()
+	state := State{make(map[int]Camera)}
+	cameraId := 0
+	for {
+		conn, err := listener.Accept()
+		if err != nil {
+			log.Printf("Error accepting connection: %v\n", err)
+			continue
+		}
+		go handle(conn, &state, cameraId)
+		cameraId++
+	}
+	// state := State{make(map[int]Camera)}
+	// c1 := Camera{1, 20, 60}
+	// c2 := Camera{1, 30, 50}
+	// c3 := Camera{2, 10, 35}
+	// c4 := Camera{1, 100, 70}
+	// registerCamera(c1, &state)
+	// registerCamera(c2, &state)
+	// registerCamera(c3, &state)
+	// registerCamera(c4, &state)
+	// log.Println(getMonitoredRoads(&state))
 }
 
-func handle(conn net.Conn, state *State) {
+func handle(conn net.Conn, state *State, cameraId int) {
 	reader := bufio.NewReader(conn)
 	for {
 		msgTypeByte, err := reader.ReadByte()
@@ -90,22 +94,43 @@ func handle(conn net.Conn, state *State) {
 			log.Println("Error getting message type!")
 			return
 		}
-
+		if messageType == IAmCamera {
+			roadBytes := make([]byte, 2)
+			mileBytes := make([]byte, 2)
+			limitBytes := make([]byte, 2)
+			for range 2 {
+				b, _ := reader.ReadByte()
+				roadBytes = append(roadBytes, b)
+			}
+			for range 2 {
+				b, _ := reader.ReadByte()
+				mileBytes = append(mileBytes, b)
+			}
+			for range 2 {
+				b, _ := reader.ReadByte()
+				limitBytes = append(limitBytes, b)
+			}
+			c := Camera{
+				cameraId,
+				binary.BigEndian.Uint16(roadBytes),
+				binary.BigEndian.Uint16(mileBytes),
+				binary.BigEndian.Uint16(limitBytes),
+			}
+			registerCamera(c, state)
+		}
 	}
 }
 
-func getMonitoredRoads(state *State) []uint16 {
-	roads := make([]uint16, 0)
-	for i := range (*state).RoadCameras {
-		roads = append(roads, uint16(i))
-	}
-	return roads
-}
+// func getMonitoredRoads(state *State) []uint16 {
+// 	roads := make([]uint16, 0)
+// 	for i := range (*state).Cameras {
+// 		roads = append(roads, uint16(i))
+// 	}
+// 	return roads
+// }
 
 func registerCamera(camera Camera, state *State) {
-	r := (*state).RoadCameras[int(camera.Road)]
-	r = append(r, camera)
-	(*state).RoadCameras[int(camera.Road)] = r
+	(*state).Cameras[int(camera.ID)] = camera
 }
 
 func handleMessage(conn net.Conn, state *State, msgTypeByte byte) {
